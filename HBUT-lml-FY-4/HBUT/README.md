@@ -42,7 +42,7 @@
 * CYLJ.png
 * KHSLJ.png
 * QTLJ.png
-* YHLJ.png 
+* YHLJ.png
 
 四张图片是四类四类垃圾缩写命名，为了满足满载检测时，对应垃圾桶显示对应的垃圾满载信号
 #### 0805.pt
@@ -61,8 +61,59 @@
 #### 摄像头帧数查看.py
 这个是用来查看摄像头帧数的python文件
 
+## 运行要求与步骤
+_(1)首先我们需要确定几个地方的路径没有错_
+```python
+        # 创建一个视频播放器实例，加载指定路径的视频文件，尾的 self 是传递给 VideoPlayer 构造函数的第二个参数
+        self.video_player = VideoPlayer(r"/home/mxc/Alml/HBUT/HBUT.mp4", self)
+```
+这里建议设置绝对路径，虽然比较麻烦，但是稳定
+```python
+        # 初始化检测工作器，将DetectionWorker传递给self.worker中，也就是下面调用的话就用self.worker就可以了
+        self.worker = DetectionWorker(
+            cap=cv2.VideoCapture(0),
+            model_path=r'/home/mxc/Alml/HBUT/0730.pt',
+            names=["CYLJ", "KHSLJ", "QTLJ", "YHLJ"],
+            video_player=self.video_player,
+            main_window=self
+        )
+```
+这里改成0805.pt的模型路径，也是在同级目录下
+```python
+        # 加载图片
+        if cat == 0:
+            image_path = "/home/mxc/Alml/HBUT/manzai.png"  # 替换为你的图片路径
+            x_position = 0
+            y_position = 0
+        elif cat == 1:
+            image_path = "/home/mxc/Alml/HBUT/manzai/CYLJ.png"  # 替换为你的图片路径
+            x_position = 0
+            y_position = 0
+        elif cat == 2:
+            image_path = "/home/mxc/Alml/HBUT/manzai/KHSLJ.png"
+            x_position = 217
+            y_position = 0
+        elif cat == 3:
+            image_path = "/home/mxc/Alml/HBUT/manzai/QTLJ.png"
+            x_position = 0
+            y_position = 140
+        else:
+            image_path = "/home/mxc/Alml/HBUT/manzai/YHLJ.png"
+            x_position = 217
+            y_position = 140
+```
+这里的所有地方路径均需要修改，绝对路径或者相对路径看你自己
 
-
+_(2)我们需要插入两个串口，一个作为接收串口_
+```python
+        self.ser = serial.Serial(
+            port='/dev/ttyUSB0',
+            baudrate=115200,
+            timeout=1
+        )
+```
+串口部分在这里修改，windows使用则为COM，linux上使用则为/dev/ttyUSB
+COM号在串口助手中查找，USB号通过 ls /dev/ttyUSB来查找
 # HBUT
 ## Heading 2
 ### Heading 3
