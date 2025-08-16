@@ -15,7 +15,9 @@ import random
 
 """
 FY-4-LOGGER
-这个代码可以实现完整的比赛功能，包括出现垃圾直接跳转，100次垃圾直接结束开始播放视频，结束开始播放视频的话时间可以设置
+这个代码可以实现完整的比赛功能，包括出现垃圾直接跳转，10次垃圾直接结束开始播放视频，
+结束开始播放视频的话时间可以设置，代码只给了少部分注释，逻辑自行推理，并非最终代码，
+有部分缺陷望海涵
 """
 
 
@@ -117,14 +119,6 @@ class DetectionWorker:
     """检测工作器类，负责目标检测和串口通信"""
 
     def __init__(self, cap, model_path, names, video_player, main_window):
-        """
-        初始化检测工作器
-        :param cap: 视频捕获对象
-        :param model_path: YOLO模型路径
-        :param names: 类别名称列表
-        :param video_player: 视频播放器实例
-        :param main_window: 主窗口实例
-        """
         self.cap = cap
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         print(f"-----check the device to use-----")
@@ -141,12 +135,12 @@ class DetectionWorker:
         )
         self.start_detection = False
         self.detection_sequence = 0  # 序号
-        self.label_counter = defaultdict(int)  # 用于单垃圾检测
+        self.label_counter = defaultdict(int) 
         self.detection_paused = False
         self.received_e09f = False
         self.detection_start_time = None
         self.random_generator = random.Random()
-        self.show_live_frame = False  # 是否显示实时帧
+        self.show_live_frame = False  
         self.first_detection = True
 
         # 第二层传送带定义是否停止检测
@@ -170,7 +164,6 @@ class DetectionWorker:
         self.background_iou = 0.55  # 后台检测IOU阈值
 
     def inference_one_frame(self):
-        """在后台推理一帧，以提前加载模型和摄像头"""
         ret, frame = self.cap.read()
         if ret:
             results = self.model.predict(source=frame, conf=0.9, iou=0.85, device=self.device)
@@ -181,11 +174,8 @@ class DetectionWorker:
             print("Failed to read initial frame.")
 
     def draw_direction_markers(self, frame):
-        """在图像上绘制方向标识（左/右/上/下）和中心点参考线"""
         h, w = frame.shape[:2]  # 获取图像高、宽
 
-        # 1. 左右方向（基于中心点x坐标）
-        # 左侧标识：红色竖线 + 文字（对应cx较小的区域）
         left_line_x = int(w * 0.3)  # 左侧参考线（图像左1/3处）
         #cv2.line(frame, (left_line_x, 0), (left_line_x, h), (0, 0, 255), 2)
         #cv2.putText(
@@ -193,7 +183,6 @@ class DetectionWorker:
         #    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2
         #)
 
-        # 右侧标识：蓝色竖线 + 文字（对应cx较大的区域）
         right_line_x = int(w * 0.7)  # 右侧参考线（图像右1/3处）
         #cv2.line(frame, (right_line_x, 0), (right_line_x, h), (255, 0, 0), 2)
         #cv2.putText(
@@ -201,8 +190,6 @@ class DetectionWorker:
         #    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2
         #)
 
-        # 2. 上下方向（基于中心点y坐标）
-        # 上侧（前）标识：绿色横线 + 文字（对应cy较小的区域）
         top_line_y = int(h * 0.3)  # 上侧参考线（图像上1/3处）
         #cv2.line(frame, (0, top_line_y), (w, top_line_y), (0, 255, 0), 2)
         #cv2.putText(
@@ -210,7 +197,6 @@ class DetectionWorker:
         #    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2
         #)
 
-        # 下侧（后）标识：黄色横线 + 文字（对应cy较大的区域）
         bottom_line_y = int(h * 0.7)  # 下侧参考线（图像下1/3处）
         #cv2.line(frame, (0, bottom_line_y), (w, bottom_line_y), (0, 255, 255), 2)
         #cv2.putText(
@@ -218,7 +204,6 @@ class DetectionWorker:
         #    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2
         #)
 
-        # 3. 中心点参考十字线（画面中心）
         #cv2.line(frame, (w // 2, 0), (w // 2, h), (128, 128, 128), 1)  # 垂直中线
         #cv2.line(frame, (0, h // 2), (w, h // 2), (128, 128, 128), 1)  # 水平中线
         #cv2.putText(
@@ -229,15 +214,11 @@ class DetectionWorker:
         return frame
 
     def draw_detection_center(self, frame, box):
-        """在检测框上绘制中心点（红色圆点）和坐标文字"""
-        # 计算检测框中心点 (cx, cy)
-        x1, y1, x2, y2 = box.xyxy[0]  # 检测框左上角和右下角坐标
-        cx = int((x1 + x2) / 2)  # 中心点x坐标
-        cy = int((y1 + y2) / 2)  # 中心点y坐标
+        x1, y1, x2, y2 = box.xyxy[0]  
+        cx = int((x1 + x2) / 2)  
+        cy = int((y1 + y2) / 2)  
 
-        # 绘制中心点（红色圆点）
-        #cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1)  # 填充圆
-        # 显示中心点坐标
+        #cv2.circle(frame, (cx, cy), 5, (0, 0, 255), -1) 
         #cv2.putText(
         #    frame, f"中心 (cx={cx}, cy={cy})", (cx + 10, cy - 10),
         #    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2
@@ -259,10 +240,10 @@ class DetectionWorker:
                     print("cap detect task begin ")
                     print("---------------------")
                     self.start_detection = True
-                    self.show_live_frame = True  # 开始显示实时帧
+                    self.show_live_frame = True  
                     self.video_player.pause()
                     self.main_window.show_detection_screen()
-                    self.detection_sequence = 0  # 重置序号
+                    self.detection_sequence = 0 
                     self.reset_counters()
                     if self.main_window.text_browser:
                         self.main_window.text_browser.delete('1.0', tk.END)
@@ -273,7 +254,7 @@ class DetectionWorker:
                     print("---------------------")
                     self.start_detection = False
                     self.detection_paused = True
-                    self.show_live_frame = False  # 停止显示实时帧
+                    self.show_live_frame = False 
                     self.video_player.resume()
                     self.main_window.hide_detection_screen()
                 elif command == "A3B":
@@ -286,9 +267,7 @@ class DetectionWorker:
                     print("shut up manzai_warning")
                     print("---------------------")
                     self.main_window.close_alert_popup()
-
-
-                # send special manzai signal
+                    
                 elif command == "A5B":
                     print("---------------------")
                     print("show CYLJ manzai_warning")
@@ -350,17 +329,15 @@ class DetectionWorker:
                     print("receive data: E01F")
                     print("stop detection")
                     print("---------------------")
-                    self.detection_paused = True  # 暂停检测
-                    self.process_detection_results()  # 处理检测结果
-                    time.sleep(0.5)  # 等待 1 秒
-                    self.reset_counters()  # 清空上一次的检测信息
-                    self.detection_paused = False  # 重新开始检测
+                    self.detection_paused = True  
+                    self.process_detection_results()  
+                    time.sleep(0.5) 
+                    self.reset_counters()
+                    self.detection_paused = False 
 
-            # 新增后台持续检测逻辑
             if self.background_detection and not self.start_detection:
                 ret, frame = self.cap.read()
                 if ret:
-                    # 快速后台检测
                     results = self.model.predict(
                         source=frame,
                         conf=self.background_conf,
@@ -369,20 +346,19 @@ class DetectionWorker:
 
                     )
 
-                    # 如果检测到任何物体
                     if any(len(r.boxes) > 0 for r in results):
                         print("检测到物体，触发正式检测流程")
                         self.background_detection = False
                         self._trigger_formal_detection()
 
-            if self.start_detection and self.show_live_frame:  # 显示实时帧
+            if self.start_detection and self.show_live_frame: 
                 ret, frame = self.cap.read()
                 if not ret:
                     print("---------------------")
                     print("can not read frame, check the VideoCapture")
                     print("---------------------")
                     break
-                self.show_frame(frame)  # 显示实时帧
+                self.show_frame(frame)
 
             if self.received_e09f and not self.detection_paused:
                 ret, frame = self.cap.read()
@@ -394,8 +370,6 @@ class DetectionWorker:
                 self.inference_task(frame)
 
     def _trigger_formal_detection(self):
-        """触发正式检测流程"""
-        # 模拟收到A1B命令
         self.start_detection = True
         self.show_live_frame = True
         self.video_player.pause()
@@ -403,20 +377,15 @@ class DetectionWorker:
         self.detection_sequence = 0
         self.reset_counters()
 
-        # 模拟收到E09F命令
         self.received_e09f = True
         self.detection_start_time = time.time()
         self.detection_paused = False
 
-        # 清空显示内容
         if self.main_window.text_browser:
             self.main_window.text_browser.delete('1.0', tk.END)
 
     def show_frame(self, frame):
-        """显示带方向标识的实时帧"""
-        # 先绘制方向标识
         frame_with_markers = self.draw_direction_markers(frame)
-        # 调整大小并显示
         frame_with_markers = cv2.resize(frame_with_markers, (800, 600))
         rgb_image = cv2.cvtColor(frame_with_markers, cv2.COLOR_BGR2RGB)
         img = Image.fromarray(rgb_image)
@@ -425,12 +394,10 @@ class DetectionWorker:
         self.main_window.show_img_label.image = img_tk
 
     def reset_counters(self):
-        """重置检测计数器"""
         self.label_counter = defaultdict(int)
         self.detection_start_time = time.time()
 
     # def handle_g09h_command(self):
-    #     """处理G09H命令，随机发送标签"""
     #     random_label = self.random_generator.randint(0, 3)
     #     command = f"C{random_label + 1}9D"
     #     print(f"send the data: {command}")
@@ -443,31 +410,27 @@ class DetectionWorker:
     #             break
     #     if self.main_window.text_browser:
     #         self.detection_sequence += 1
-    #         label_text = self.get_label_text(random_label)  # 获取标签对应的中文名称
+    #         label_text = self.get_label_text(random_label)  
     #         self.main_window.text_browser.insert(tk.END, f"{self.detection_sequence},{label_text},1,OK!\n")
-    #         self.main_window.text_browser.see(tk.END)  # 滚动到文本框底
+    #         self.main_window.text_browser.see(tk.END)  
     #
     #         # 更新表格中的计数
     #         self.update_table_counter(random_label)
     #
-    #         # 停止实时检测
-    #     self.received_e09f = False  # 重置 E09F 接收标志
-    #     self.detection_paused = True  # 暂停检测
-    #     self.show_live_frame = False  # 停止显示实时帧
+    #     self.received_e09f = False  
+    #     self.detection_paused = True 
+    #     self.show_live_frame = False  
     #     print("Real-time detection stopped after receiving G09H.")
 
     def inference_task(self, frame):
-        """执行推理任务（固定选择中心点y坐标最大的检测框）"""
         results = self.model.predict(source=frame, conf=0.60, iou=0.55, device=self.device)
         current_labels = []
 
         for result in results:
             boxes = result.boxes.cpu().numpy()
             if len(boxes) > 0:
-                # 选择中心点y坐标(cy)最大的检测框（最下方的物体）
                 selected_box = max(boxes, key=lambda box: (box.xyxy[0][1] + box.xyxy[0][3]) / 2)
 
-                # 在检测框上绘制中心点和边界框
                 frame = self.draw_detection_center(frame, selected_box)
                 frame = self.draw_bounding_box(frame, selected_box)
 
@@ -476,23 +439,18 @@ class DetectionWorker:
                 self.label_counter[class_idx] += 1
                 self.send_serial_command(class_idx)
 
-        # 显示带方向标识和中心点的帧
         self.show_frame(frame)
 
     def draw_bounding_box(self, frame, box):
-        """在图像上绘制检测框和类别标签"""
         x1, y1, x2, y2 = map(int, box.xyxy[0])
         class_idx = int(box.cls[0])
         conf = box.conf[0]
 
-        # 根据类别设置不同颜色（红、绿、蓝、黄）
         colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0), (0, 255, 255)]
         color = colors[class_idx % len(colors)]
 
-        # 绘制边界框
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
 
-        # 绘制类别和置信度文本
         label = f"{self.names[class_idx]} {conf:.2f}"
         cv2.putText(frame, label, (x1, y1 - 10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
@@ -500,7 +458,6 @@ class DetectionWorker:
         return frame
 
     def process_detection_results(self):
-        """处理检测结果并发送串口信息"""
         if self.label_counter:
             most_common_label = max(self.label_counter, key=self.label_counter.get)
             command = f"C{most_common_label + 1}9D"
@@ -519,21 +476,17 @@ class DetectionWorker:
                 if m1 > 10:
                     break
 
-            # 打印到 text_browser
             if self.main_window.text_browser:
                 self.main_window.text_browser.tag_add("black", "1.0", tk.END)
                 self.detection_sequence += 1
                 self.main_window.text_browser.insert(tk.END,
                                                      f"{self.detection_sequence},{self.get_label_text(most_common_label)},1,OK!\n",
                                                      "green")
-                # 获取新文本的起始和结束位置
                 start_index = self.main_window.text_browser.index(tk.END + "-1c")
                 end_index = self.main_window.text_browser.index(tk.END)
-                # 应用 highlight 标签
                 self.main_window.text_browser.tag_add("highlight", start_index, end_index)
-                self.main_window.text_browser.see(tk.END)  # 滚动到文本框底
+                self.main_window.text_browser.see(tk.END)  
 
-                # 更新表格中的计数
                 self.update_table_counter(most_common_label)
 
         # 发送结束信号
@@ -545,27 +498,23 @@ class DetectionWorker:
             if n >= 10:
                 break
 
-                # 检测序号为10时，10秒后自动回到视频播放界面
         if self.detection_sequence == 100:
             print("Detection sequence reached 10, returning to video playback in 10 seconds...")
             self.main_window.root.after(5000, self.return_to_video_playback)
 
     def return_to_video_playback(self):
-        """返回到视频播放界面"""
         self.start_detection = False
         self.detection_paused = True
-        self.show_live_frame = False  # 停止显示实时帧
+        self.show_live_frame = False  
         self.video_player.resume()
         self.main_window.hide_detection_screen()
 
     def send_serial_command(self, label):
-        """发送单垃圾检测的串口命令"""
         command = f"C{label + 1}9D"
         print(f"send the data: {command}")
         self.ser.write((command + '\n').encode('utf-8'))
 
     def get_label_text(self, label):
-        """获取标签对应的中文名称"""
         label_map = {
             0: "厨余垃圾",
             1: "可回收垃圾",
@@ -575,12 +524,9 @@ class DetectionWorker:
         return label_map.get(label, "未知垃圾")
 
     def update_table_counter(self, label):
-        """根据检测到的垃圾类型更新表格中的计数"""
         if hasattr(self.main_window, 'table_frame'):
-            # 获取 label 对应的中文名称
             label_text = self.get_label_text(label)
 
-            # 遍历表格中的所有行，找到对应的垃圾类型并更新计数
             for row in range(4):
                 cell1 = self.main_window.table_frame.grid_slaves(row=row, column=0)[0]
                 if cell1.cget("text") == label_text:
@@ -677,17 +623,20 @@ class MainWindow:
         self.root.bind("<Configure>", self.on_resize)
         self.detection_window.bind("<Configure>", self.on_detection_resize)
 
-        # 绿色底色
+        # 绿色底色，高亮，白色前景色，字号16，粗体
         self.text_browser.tag_configure("highlight", background="green", foreground="white",
                                         font=("default", 16, "bold"))
 
     def show_message_on_video_label(self, message):
         """在 video_label 的底部中间显示消息，并在三秒后清除"""
-        # 如果已经存在 message_label，先清除它
+        # 如果已经存在 message_label，先清除它，以免重复创建
         if hasattr(self, "message_label"):
             self.message_label.destroy()
 
-        # 创建一个 Label 来显示消息
+        # 创建一个标签控件用于显示消息文本
+        # 该标签放置在show_img_label容器中，黑色背景和白色前景
+        # 文本内容为message变量的值（去除首尾空白字符）
+        # 字体设置为默认字体，大小为25号
         self.message_label = tk.Label(
             self.show_img_label,
             text=message.strip(),
@@ -704,22 +653,34 @@ class MainWindow:
 
     def clear_message_on_video_label(self):
         """清除 video_label 中的消息"""
+        # 检查并销毁消息标签控件
+        # 如果当前对象存在message_label属性，则销毁该标签控件并从对象中删除该属性
         if hasattr(self, "message_label"):
             self.message_label.destroy()
             del self.message_label
 
+
     def show_detection_screen(self):
         """显示检测窗口"""
-        self.detection_window.deiconify()  # 显示检测窗口
-        self.detection_window.config(cursor="spider")  # 设置光标
+        # 显示检测窗口
+        self.detection_window.deiconify()
+        # 设置光标样式为蜘蛛形状
+        self.detection_window.config(cursor="spider")
+        # 隐藏视频标签组件
         self.video_label.pack_forget()
+        # 重新布局视频标签组件，放置在窗口底部并填充剩余空间
         self.video_label.pack(side=tk.BOTTOM, expand=True, fill=tk.BOTH)
+
 
     def hide_detection_screen(self):
         """隐藏检测窗口"""
+        # 隐藏检测窗口并重新布局视频标签
+        # 首先隐藏检测窗口，然后移除视频标签的当前布局，
+        # 最后将视频标签重新放置在窗口顶部并填充整个可用空间
         self.detection_window.withdraw()  # 隐藏检测窗口
         self.video_label.pack_forget()
         self.video_label.pack(side=tk.TOP, expand=True, fill=tk.BOTH)
+
 
     def resize_video_label(self, width, height):
         video_width = int(width)  # 视频宽度与窗口宽度相同
@@ -745,11 +706,10 @@ class MainWindow:
             img_height = event.height
             self.show_img_label.place(x=0, y=0, width=img_width, height=img_height)
 
-            # 调整 text_browser 的大小
             text_width = int(event.width / 4)
-            text_height = int(event.height * 20 / 26)  # 高度为窗口高度的 1/5
-            text_x = img_width  # 左侧位置不变
-            text_y = int(event.height * 1 / 30)  # 上侧位置不变
+            text_height = int(event.height * 20 / 26) 
+            text_x = img_width  
+            text_y = int(event.height * 1 / 30) 
             self.text_browser.place(x=text_x, y=text_y, width=text_width, height=text_height)
 
             table1_x = text_x
@@ -757,53 +717,43 @@ class MainWindow:
             table1_width = text_width
             table1_height = int(event.height * 0.04)
 
-            # 如果表格已经存在，先清除旧的表格
             if hasattr(self, "table1_frame"):
                 self.table1_frame.destroy()
 
             self.table1_frame = tk.Frame(self.detection_window, width=table1_width, height=table1_height, bg="white")
             self.table1_frame.place(x=table1_x, y=table1_y, width=table1_width, height=table1_height)
-            # 创建 1 行 4 列的表格
-            # 创建 1 行 4 列的表格
             labels = ["序号", "垃圾种类", "数量", "是否分类"]
             for col, label_text in enumerate(labels):
                 label = tk.Label(self.table1_frame, text=label_text, borderwidth=1, relief="solid", anchor="center",
                                  font=("default", 10))
                 label.grid(row=0, column=col, sticky="nsew")
-                self.table1_frame.columnconfigure(col, weight=1)  # 设置列权重
+                self.table1_frame.columnconfigure(col, weight=1)  
 
             for i in range(4):
-                self.table1_frame.rowconfigure(i, weight=1)  # 设置行权重
-            self.table1_frame.columnconfigure(0, weight=1)  # 设置列权重
+                self.table1_frame.rowconfigure(i, weight=1)  
+            self.table1_frame.columnconfigure(0, weight=1)  
 
-            # 表格的布局
-            table_x = text_x  # 表格与 text_browser 左侧对齐
-            table_y = text_y + text_height  # 表格紧贴 text_browser 下方
-            table_width = text_width  # 表格宽度与 text_browser 一致
-            table_height = int(event.height * 0.2)  # 表格高度为窗口高度的 20%
+         
+            table_x = text_x  
+            table_y = text_y + text_height  
+            table_width = text_width  
+            table_height = int(event.height * 0.2) 
 
-            # 如果表格已经存在，先清除旧的表格
             if hasattr(self, "table_frame"):
                 self.table_frame.destroy()
 
-            # 创建新的表格
             self.table_frame = tk.Frame(self.detection_window, width=table_width, height=table_height, bg="white")
             self.table_frame.place(x=table_x, y=table_y, width=table_width, height=table_height)
 
-            # 创建 4 行 2 列的表格
             labels = ["厨余垃圾", "可回收垃圾", "其他垃圾", "有害垃圾"]
             for row in range(4):
-                # 创建第一列（垃圾类型）
                 cell1 = tk.Label(self.table_frame, text=labels[row], borderwidth=1, relief="solid", anchor="center",
                                  font=("default", 18))
                 cell1.grid(row=row, column=0, sticky="nsew")
-
-                # 创建第二列（累计个数，默认为0）
                 cell2 = tk.Label(self.table_frame, text="0", borderwidth=1, relief="solid", anchor="center",
                                  font=("default", 18))
                 cell2.grid(row=row, column=1, sticky="nsew")
 
-            # 设置表格的行和列权重，以便在调整窗口大小时动态调整
             for i in range(4):
                 self.table_frame.rowconfigure(i, weight=1)
             for j in range(2):
@@ -852,18 +802,15 @@ class MainWindow:
             self.alert_popup.attributes('-topmost', True)"""
 
     def show_alert_popup(self, cat=0):
-        # 检查是否已经存在相同 cat 的弹窗
         if hasattr(self, 'alert_popups'):
             for alert_popup in self.alert_popups:
                 if hasattr(alert_popup, 'cat') and alert_popup.cat == cat:
                     print(f"弹窗 cat={cat} 已经存在，不再重复弹出")
                     return
 
-        # 定义弹窗的宽度和高度
         popup_width = int(750 * 1 / 3)
         popup_height = int(420 * 1 / 3)
 
-        # 获取屏幕的宽度和高度
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
 
@@ -881,13 +828,12 @@ class MainWindow:
             if x_position + popup_height > screen_height:
                 x_position =0'''
 
-        # 加载图片
         if cat == 0:
-            image_path = "/home/mxc/Alml/HBUT/manzai.png"  # 替换为你的图片路径
+            image_path = "/home/mxc/Alml/HBUT/manzai.png"  
             x_position = 0
             y_position = 0
         elif cat == 1:
-            image_path = "/home/mxc/Alml/HBUT/manzai/CYLJ.png"  # 替换为你的图片路径
+            image_path = "/home/mxc/Alml/HBUT/manzai/CYLJ.png" 
             x_position = 0
             y_position = 0
         elif cat == 2:
@@ -903,53 +849,44 @@ class MainWindow:
             x_position = 217
             y_position = 140
 
-        # 创建弹窗
         alert_popup = tk.Toplevel(self.root)
         alert_popup.title("WARNING WARNING WARNING")
         alert_popup.geometry(f"{popup_width}x{popup_height}+{x_position}+{y_position}")
-
+        
         try:
             img = Image.open(image_path)
             img = img.resize((popup_width, popup_height), Image.Resampling.LANCZOS)  # 调整图片大小
             img_tk = ImageTk.PhotoImage(img)
             label = tk.Label(alert_popup, image=img_tk)
-            label.image = img_tk  # 保持图片引用，防止被垃圾回收
+            label.image = img_tk 
             label.pack(expand=True)
         except Exception as e:
             print(f"Failed to load image: {e}")
-            # 如果图片加载失败，显示默认文本
             label = tk.Label(alert_popup, text="满载警告!!!", fg="red", font=("宋体", 100, "bold"))
             label.pack(expand=True)
 
-        # 设置弹窗置顶
         alert_popup.attributes('-topmost', True)
 
-        # 为弹窗分配 cat 值
         alert_popup.cat = cat
 
-        # 存储弹窗实例
         if not hasattr(self, 'alert_popups'):
             self.alert_popups = []
         self.alert_popups.append(alert_popup)
 
-        # 绑定关闭事件，从列表中移除弹窗
         alert_popup.protocol("WM_DELETE_WINDOW", lambda: self.close_alert_popup(alert_popup))
 
     def close_alert_popup(self, popup=None, cat=None):
         if popup:
-            # 关闭指定的弹窗
             popup.destroy()
             if hasattr(self, 'alert_popups') and popup in self.alert_popups:
                 self.alert_popups.remove(popup)
         elif cat is not None:
-            # 根据 cat 值关闭对应的弹窗
             if hasattr(self, 'alert_popups'):
-                for alert_popup in self.alert_popups[:]:  # 使用 [:] 复制列表以避免迭代时修改
+                for alert_popup in self.alert_popups[:]:  
                     if hasattr(alert_popup, 'cat') and alert_popup.cat == cat:
                         alert_popup.destroy()
                         self.alert_popups.remove(alert_popup)
         else:
-            # 关闭所有弹窗
             if hasattr(self, 'alert_popups'):
                 for alert_popup in self.alert_popups:
                     alert_popup.destroy()
@@ -957,6 +894,5 @@ class MainWindow:
 
 
 if __name__ == '__main__':
-    """程序入口点"""
-    app = MainWindow()  # 创建主窗口实例
-    app.root.mainloop()  # 运行主循环
+    app = MainWindow()  
+    app.root.mainloop()  
