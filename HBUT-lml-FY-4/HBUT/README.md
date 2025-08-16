@@ -102,7 +102,7 @@ _(1)首先我们需要确定几个地方的路径没有错_
             x_position = 217
             y_position = 140
 ```
-这里的所有地方路径均需要修改，绝对路径或者相对路径看你自己
+这里的所有地方路径均需要修改，绝对路径或者相对路径看你自己<br>
 
 _(2)我们需要插入两个串口，一个作为接收串口_
 ```python
@@ -112,356 +112,44 @@ _(2)我们需要插入两个串口，一个作为接收串口_
             timeout=1
         )
 ```
-串口部分在这里修改，windows使用则为COM，linux上使用则为/dev/ttyUSB
-COM号在串口助手中查找，USB号通过 ls /dev/ttyUSB来查找
-# HBUT
-## Heading 2
-### Heading 3
-#### Heading 4
-##### Heading 5
-###### Heading 6
-# Heading 1 link [Heading link](https://github.com/pandao/editor.md "Heading link")
-## Heading 2 link [Heading link](https://github.com/pandao/editor.md "Heading link")
-### Heading 3 link [Heading link](https://github.com/pandao/editor.md "Heading link")
-#### Heading 4 link [Heading link](https://github.com/pandao/editor.md "Heading link") Heading link [Heading link](https://github.com/pandao/editor.md "Heading link")
-##### Heading 5 link [Heading link](https://github.com/pandao/editor.md "Heading link")
-###### Heading 6 link [Heading link](https://github.com/pandao/editor.md "Heading link")
+串口部分在这里修改，windows使用则为COM，linux上使用则为/dev/ttyUSB<br>
+COM号在串口助手中查找，USB号通过 ls /dev/ttyUSB来查找<br>
 
-#### 标题（用底线的形式）Heading (underline)
-
-This is an H1
-=============
-
-This is an H2
--------------
-
-### 字符效果和横线等
-
-----
-
-~~删除线~~ <s>删除线（开启识别HTML标签时）</s>
-*斜体字*      _斜体字_
-**粗体**  __粗体__
-***粗斜体*** ___粗斜体___
-
-上标：X<sub>2</sub>，下标：O<sup>2</sup>
-
-**缩写(同HTML的abbr标签)**
-
-> 即更长的单词或短语的缩写形式，前提是开启识别HTML标签时，已默认开启
-
-The <abbr title="Hyper Text Markup Language">HTML</abbr> specification is maintained by the <abbr title="World Wide Web Consortium">W3C</abbr>.
-
-### 引用 Blockquotes
-
-> 引用文本 Blockquotes
-
-引用的行内混合 Blockquotes
-
-> 引用：如果想要插入空白换行`即<br />标签`，在插入处先键入两个以上的空格然后回车即可，[普通链接](http://localhost/)。
-
-### 锚点与链接 Links
-
-[普通链接](http://localhost/)
-
-[普通链接带标题](http://localhost/ "普通链接带标题")
-
-直接链接：<https: //github.com>
-
-[锚点链接][anchor-id]
-
-[anchor-id]: http://www.this-anchor-link.com/
-
-[mailto:test.test@gmail.com](mailto:test.test@gmail.com)
-
-GFM a-tail link @pandao  邮箱地址自动链接 test.test@gmail.com  www@vip.qq.com
-
-> @pandao
-
-### 多语言代码高亮 Codes
-
-#### 行内代码 Inline code
-
-执行命令：`npm install marked`
-
-#### 缩进风格
-
-即缩进四个空格，也做为实现类似 `<pre>` 预格式化文本 ( Preformatted Text ) 的功能。
-
-    <?php
-        echo "Hello world!";
-    ?>
-
-预格式化文本：
-
-    | First Header  | Second Header |
-    | ------------- | ------------- |
-    | Content Cell  | Content Cell  |
-    | Content Cell  | Content Cell  |
-
-#### JS代码
-
-```javascript
-function test() {
-    console.log("Hello world!");
-}
-
-(function(){
-    var box = function() {
-        return box.fn.init();
-    };
-
-    box.prototype = box.fn = {
-        init : function(){
-            console.log('box.init()');
-
-            return this;
-        },
-
-        add : function(str) {
-            alert("add", str);
-
-            return this;
-        },
-
-        remove : function(str) {
-            alert("remove", str);
-
-            return this;
-        }
-    };
-
-    box.fn.init.prototype = box.fn;
-
-    window.box =box;
-})();
-
-var testBox = box();
-testBox.add("jQuery").remove("jQuery");
+_(3)摄像头设置_
+```python
+        self.worker = DetectionWorker(
+            cap=cv2.VideoCapture(0),
+            model_path=r'/home/mxc/Alml/HBUT/0730.pt',
+            names=["CYLJ", "KHSLJ", "QTLJ", "YHLJ"],
+            video_player=self.video_player,
+            main_window=self
+        )
 ```
+1.如果使用intel-D455,或者微软摄像头，或者奥秘中光摄像头请查看详细的说明文档，有对应的调用方式<br>
+（1）intel-D455摄像头调用最简洁，只需要调用python文件包即可。<br>
+（2）微软摄像头需要调用ROS，比较复杂，静下心慢慢调。<br>
+（3）奥秘中光摄像头调用极其复杂，建议耐心调试。<br>
+2.如果使用普通Usb摄像头，只需要用opencv库即可，调用即可用cv2.VideoCapture(0)<br>
+（1）注意摄像头的代号<br>
+（2）笔记本的话自带摄像头，所以USB摄像头编号为0，其他依次递增<br>
+（3）视觉开发板没有自带摄像头，所以外接USB摄像头编号为0，其他一次递增<br>
 
-#### HTML 代码 HTML codes
+_(4)确认好之后即可开始运行python3 HBUT_lml7.py注意配置的环境问题_
+希望高速运行，保证稳定运行效果需要以下环境配置：<br>
+numpy                        1.25.2<br>
+opencv-python                4.10.0.84<br>
+openvino                     2024.6.0<br>
+pandas                       2.2.3<br>
+pillow                       10.4.0<br>
+__torch__                        2.4.1<br>
+__torchaudio__                   2.4.1<br>
+__torchvision__                  0.19.1<br>
+配置过程可能相对复杂，亲耐心配置，不要配置错了，就算你糊里糊涂安装了torch-cpu也是没办法在后续继续使用的，请安装torch-gpu torchvision-gpu
 
-```html
-<!DOCTYPE html>
-<html>
-<head>
-<mate charest="utf-8" />
-<meta name="keywords" content="Editor.md, Markdown, Editor" />
-<title>Hello world!</title>
-<style type="text/css">
-    body {
-        font-size: 14px;
-        color: #444;
-        font-family: "Microsoft Yahei", Tahoma, "Hiragino Sans GB", Arial;
-        background: #fff;
-    }
+## 杂项
+(1)模型训练代码和教程<br>
+方法一：YOLOv8_fast_running(https://github.com/FY-4/YOLOv8_fast_running.git)<br>
+方法二：官方教程Ultralytics官网<br>
+(2)建议使用网上算力跑数据，否则电脑寿命大减
 
-    ul {
-        list-style: none;
-    }
 
-    img {
-        border: none;
-        vertical-align: middle;
-    }
-</style>
-    </head>
-<body>
-<h1 class="text-xxl">Hello world!</h1>
-<p class="text-green">Plain text</p>
-    </body>
-</html>
-```
-
-### 图片 Images
-
-Image:
-
-![](https://pandao.github.io/editor.md/examples/images/4.jpg)
-
-> Follow your heart.
-
-![](https://pandao.github.io/editor.md/examples/images/8.jpg)
-
-> 图为：厦门白城沙滩
-
-图片加链接 (Image + Link)：
-
-[![](https://pandao.github.io/editor.md/examples/images/7.jpg)](https://pandao.github.io/editor.md/images/7.jpg "李健首张专辑《似水流年》封面")
-
-> 图为：李健首张专辑《似水流年》封面
-
-----
-
-### 列表 Lists
-
-#### 无序列表（减号）Unordered Lists (-)
-
-- 列表一
-- 列表二
-- 列表三
-
-#### 无序列表（星号）Unordered Lists (*)
-
-* 列表一
-* 列表二
-* 列表三
-
-#### 无序列表（加号和嵌套）Unordered Lists (+)
-
-+ 列表一
-+ 列表二
-    + 列表二-1
-    + 列表二-2
-    + 列表二-3
-+ 列表三
-    * 列表一
-    * 列表二
-    * 列表三
-
-#### 有序列表 Ordered Lists (-)
-
-1. 第一行
-2. 第二行
-3. 第三行
-
-#### GFM task list
-
-- [x] GFM task list 1
-- [x] GFM task list 2
-- [ ] GFM task list 3
-    - [ ] GFM task list 3-1
-    - [ ] GFM task list 3-2
-    - [ ] GFM task list 3-3
-- [ ] GFM task list 4
-    - [ ] GFM task list 4-1
-    - [ ] GFM task list 4-2
-
-----
-
-### 绘制表格 Tables
-
-| 项目        | 价格   |  数量  |
-| --------   | -----:  | :----:  |
-| 计算机      | $1600   |   5     |
-| 手机        |   $12   |   12   |
-| 管线        |    $1    |  234  |
-
-First Header  | Second Header
-------------- | -------------
-Content Cell  | Content Cell
-Content Cell  | Content Cell 
-
-| First Header  | Second Header |
-| ------------- | ------------- |
-| Content Cell  | Content Cell  |
-| Content Cell  | Content Cell  |
-
-| Function name | Description                    |
-| ------------- | ------------------------------ |
-| `help()`      | Display the help window.       |
-| `destroy()`   | **Destroy your computer!**     |
-
-| Left-Aligned  | Center Aligned  | Right Aligned |
-| :------------ |:---------------:| -----:|
-| col 3 is      | some wordy text | $1600 |
-| col 2 is      | centered        |   $12 |
-| zebra stripes | are neat        |    $1 |
-
-| Item      | Value |
-| --------- | -----:|
-| Computer  | $1600 |
-| Phone     |   $12 |
-| Pipe      |    $1 |
-
-----
-
-#### 特殊符号 HTML Entities Codes
-
-© &  ¨ ™ ¡ £
-& < > ¥ € ® ± ¶ § ¦ ¯ « · 
-
-X² Y³ ¾ ¼  ×  ÷   »
-
-18ºC  "  '
-
-[========]
-
-#### 反斜杠 Escape
-
-\*literal asterisks\*
-
-[========]
-
-### 科学公式 TeX(KaTeX)
-
-$$E=mc^2$$
-
-行内的公式$$E=mc^2$$行内的公式，行内的$$E=mc^2$$公式。
-
-$$x > y$$
-
-$$\(\sqrt{3x-1}+(1+x)^2\)$$
-
-$$\sin(\alpha)^{\theta}=\sum_{i=0}^{n}(x^i + \cos(f))$$
-
-多行公式：
-
-```math
-\displaystyle
-\left( \sum\_{k=1}^n a\_k b\_k \right)^2
-\leq
-\left( \sum\_{k=1}^n a\_k^2 \right)
-\left( \sum\_{k=1}^n b\_k^2 \right)
-```
-
-```katex
-\displaystyle 
-    \frac{1}{
-        \Bigl(\sqrt{\phi \sqrt{5}}-\phi\Bigr) e^{
-        \frac25 \pi}} = 1+\frac{e^{-2\pi}} {1+\frac{e^{-4\pi}} {
-        1+\frac{e^{-6\pi}}
-        {1+\frac{e^{-8\pi}}
-         {1+\cdots} }
-        } 
-    }
-```
-
-```latex
-f(x) = \int_{-\infty}^\infty
-    \hat f(\xi)\,e^{2 \pi i \xi x}
-    \,d\xi
-```
-
-### 分页符 Page break
-
-> Print Test: Ctrl + P
-
-[========]
-
-### 绘制流程图 Flowchart
-
-```flow
-st=>start: 用户登陆
-op=>operation: 登陆操作
-cond=>condition: 登陆成功 Yes or No?
-e=>end: 进入后台
-
-st->op->cond
-cond(yes)->e
-cond(no)->op
-```
-
-[========]
-
-### 绘制序列图 Sequence Diagram
-
-```seq
-Andrew->China: Says Hello 
-Note right of China: China thinks\nabout it 
-China-->Andrew: How are you? 
-Andrew->>China: I am good thanks!
-```
-
-### End
